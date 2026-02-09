@@ -19,7 +19,7 @@ const ChunkSchema = new Schema<IChunk>({
   }, // The actual text snippet
   // The Vector Embedding (Array of 1536 numbers for OpenAI)
   embedding: {
-    type: [Number],
+    type: [Number], // Array of 1536 floats
     required: true
   },
   metadata: {
