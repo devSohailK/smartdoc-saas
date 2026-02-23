@@ -1,85 +1,119 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { User } from '../models/User.js';
-import { Request, Response } from 'express';
+import { Request, Response } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { User } from "../models/User.js";
 
 
-interface RegisterRequestBody {
-    email: string;
-    name: string;
-    password: string;
-}
 
+const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_EXPIRES_IN = "3d";
+
+const generateToken = (userId: string): string => {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+};
+
+// POST /api/auth/register
 export const register = async (req: Request, res: Response): Promise<void> => {
-    const { email, name, password } = req.body as RegisterRequestBody;
+  try {
+    const { email, password, name } = req.body;
 
-    if (!email || !name || !password) {
-        res.status(400).json({ message: "All fields are required" });
+    if (!email || !password || !name) {
+      res.status(400).json({ message: "Email, password, and name are required." });
+      return;
     }
 
-    try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            res.status(400).json({ message: "User already exists" });
-        }
-
-
-        // new User 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({
-            email,
-            name,
-            password: hashedPassword
-        });
-
-        const savedUser = await newUser.save();
-
-        // generate JWT token
-        const token = jwt.sign({ userId: savedUser._id, email: savedUser.email }, process.env.JWT_SECRET as string, { expiresIn: '3d' })
-
-        res.status(201).json({ token, user: { email: savedUser.email, name: savedUser.name } });
-
-
-
-    } catch (error) {
-        console.error("Error in register controller:", error);
-        res.status(500).json({ message: "Server error" });
-
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      res.status(409).json({ message: "Email is already registered." });
+      return;
     }
-}
 
+    const hashedPassword = await bcrypt.hash(password, 12);
 
+    const user = await User.create({
+      email,
+      name,
+      password: hashedPassword,
+    });
 
-export const login = async (req: Request, res: Response) => {
-    const { email, password } = req.body as RegisterRequestBody;
+    const token = generateToken(user._id.toString());
+
+    res.status(201).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        credits: user.credits,
+        plan: user.plan,
+      },
+      accessToken: token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error.", error });
+  }
+};
+
+// POST /api/auth/login
+export const login = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, password } = req.body;
 
     if (!email || !password) {
-        return res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ message: "Email and password are required." });
+      return;
     }
 
-    try {
-        const user = await User.findOne({ email });
-        if (!user || !user.password) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
-
-        // generate JWT token
-        const token = jwt.sign(
-            { userId: user._id, email: user.email },
-            process.env.JWT_SECRET as string,
-            { expiresIn: "3d" }
-        );
-
-        return res.status(200).json({ token, user: { email: user.email } });
-    } catch (error) {
-        console.error("Error in login controller:", error);
-        return res.status(500).json({ message: "Server error" });
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(401).json({ message: "Invalid email or password." });
+      return;
     }
 
-}
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      res.status(401).json({ message: "Invalid email or password." });
+      return;
+    }
 
+    const token = generateToken(user._id.toString());
+
+    res.status(200).json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        credits: user.credits,
+        plan: user.plan,
+      },
+      accessToken: token,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error.", error });
+  }
+};
+
+// GET /api/auth/me
+export const profile = async (req: Request, res: Response): Promise<void> => {
+  try {
+    
+
+    const user = await User.findById(req.userId).select("-password");
+    if (!user) {
+      res.status(404).json({ message: "User not found." });
+      return;
+    }
+
+    res.status(200).json({
+      name: user.name,
+      email: user.email,
+      credits: user.credits,
+      plan: user.plan,
+    });
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      res.status(401).json({ message: "Invalid or expired token." });
+      return;
+    }
+    res.status(500).json({ message: "Internal server error.", error });
+  }
+};

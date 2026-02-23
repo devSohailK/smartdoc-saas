@@ -1,23 +1,26 @@
 import mongoose from "mongoose";
-import { env } from "./env.js";
 
 export const connectDB = async (): Promise<void> => {
   try {
-    // The Connection
-    const conn = await mongoose.connect(env.MONGO_URI);
+    // 1. Safety Check: Ensure URI exists before trying to connect
+    if (!process.env.MONGO_URI) {
+      throw new Error("❌ MONGO_URI is missing in .env file");
+    }
 
-    // Success Log (Host is useful for debugging production clusters)
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    // 2. The Connection
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+
+    // 3. Success Log (Host is useful for debugging production clusters)
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     
   } catch (error) {
-    // Fatal Error Handling
+    // 4. Fatal Error Handling
     if (error instanceof Error) {
-      console.error(`Database Connection Error: ${error.message}`);
+      console.error(`❌ Error: ${error.message}`);
     } else {
-      console.error("Unknown Database Error");
+      console.error("❌ Unknown Database Error");
     }
     // Stop the server if DB fails. A server without DB is useless.
     process.exit(1);
   }
 };
-
