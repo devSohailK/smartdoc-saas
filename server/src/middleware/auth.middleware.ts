@@ -3,14 +3,9 @@ import { Request, Response } from "express"
 import jwt from "jsonwebtoken"
 
 
-
-
 const JWT_SECRET = process.env.JWT_SECRET as string;
 
-
-
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
-
     try {
         const authHeader = req.headers.authorization;
 
@@ -24,7 +19,6 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
         req.userId = decoded.id;
         next();
-
 
     }catch{
         res.status(401).json({message : 'invalid or expired token'})

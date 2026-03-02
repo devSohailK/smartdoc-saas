@@ -1,4 +1,4 @@
-import mongoose, { Document as MongooseDocument, Schema } from "mongoose";
+ import mongoose, { Document as MongooseDocument, Schema } from "mongoose";
 
 
 export type DocumentStatus = "pending" | "processing" | "ready" | "failed";

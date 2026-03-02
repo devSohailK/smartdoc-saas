@@ -7,7 +7,7 @@ interface EnvConfig {
   NODE_ENV: "development" | "production" | "test";
   MONGO_URI: string;
   CLIENT_URL: string;
-  OPENAI_API_KEY?: string;
+  GEMINI_API_KEY?: string;
   JWT_SECRET?: string;
 }
 
@@ -32,7 +32,7 @@ function validateEnv(): EnvConfig {
     NODE_ENV: (process.env.NODE_ENV || "development") as EnvConfig["NODE_ENV"],
     MONGO_URI: process.env.MONGO_URI!,
     CLIENT_URL: process.env.CLIENT_URL || "http://localhost:5173",
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     JWT_SECRET: process.env.JWT_SECRET,
   };
 }
