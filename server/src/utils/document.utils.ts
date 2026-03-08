@@ -26,19 +26,28 @@ export const extractTextFromPDF = async (buffer: Buffer): Promise<string> => {
     return data.text;
 };
 
-export const chunkText = (text: string, chunkSize = 1000, overlap = 100): string[] => {
-    const chunks: string[] = [];
+export const chunkText = (text: string, chunkSize = 1000, overlap = 100): { text: string; metadata: Map<string, string> }[] => {
+
+    const chunks: { text: string; metadata: Map<string, string> }[] = [];
     let start = 0;
+    let chunkIndex = 0;
 
     while (start < text.length) {
         const end = start + chunkSize;
-        chunks.push(text.slice(start, end));
+        chunks.push({
+            text: text.slice(start, end),
+            metadata: new Map([
+                ["chunkIndex", String(chunkIndex)],
+                ["startChar", String(start)],
+                ["endChar", String(end)],
+            ])
+        });
         start = end - overlap;
+        chunkIndex++;
     }
 
-    return chunks.filter((chunk) => chunk.trim().length > 0);
+    return chunks.filter((chunk) => chunk.text.trim().length > 0);
 };
-
 
 
 export const getEmbedding = async (text: string): Promise<number[]> => {

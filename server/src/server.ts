@@ -85,7 +85,7 @@ const startServer = async () => {
         console.error(`${error.stack}`);
       }
     } else {
-      console.error("   Unknown error occurred");
+      console.error(" Unknown error occurred");
     }
     // Close database connection if it was opened
     if (mongoose.connection.readyState === 1) {

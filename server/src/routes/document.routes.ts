@@ -5,9 +5,11 @@ import { authMiddleware } from '../middleware/auth.middleware.js'
 
 const router = Router();
 
-router.get('/', authMiddleware, getDocuments);
-router.post('/upload', authMiddleware, upload.single("file"), uplaodDocuments);
-router.delete('/delete', authMiddleware, deleteDocuments);
+router.use(authMiddleware); // used in all routes
+
+router.get('/', getDocuments);
+router.post('/upload', upload.single("file"), uplaodDocuments);
+router.delete('/delete', deleteDocuments);
 
 
 export default router;

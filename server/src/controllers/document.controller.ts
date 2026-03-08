@@ -4,6 +4,7 @@ import { User } from '../models/User.js';
 import { ChunkDocs } from '../models/Chunk.js';
 import { Chat } from '../models/Chat.js';
 import { uploadToCloudinary, extractTextFromPDF, chunkText, embedChunks } from '../utils/document.utils.js'
+import { Metadata } from 'pdf-parse';
 
 
 export const uplaodDocuments = async (req: Request, res: Response): Promise<void> => {
@@ -15,22 +16,18 @@ export const uplaodDocuments = async (req: Request, res: Response): Promise<void
             return;
         }
 
-
         const userId = req.userId
         const buffer = req.file.buffer;
         const originalname = req.file.originalname;
 
-        // ── 2. Deduct credit before processing ────────────────────────────────
         const user = await User.findById(userId);
         if (!user || user.credits <= 0) {
             res.status(403).json({ message: "No credits remaining." });
             return;
         }
 
-        // ── 3. Upload to Cloudinary ────────────────────────────────────────────
         const cloudUrl = await uploadToCloudinary(buffer, originalname);
 
-        // ── 4. Create Document record with status "processing" ─────────────────
         documentRecord = await DocumentModel.create({
             userId,
             filename: originalname,
@@ -39,7 +36,6 @@ export const uplaodDocuments = async (req: Request, res: Response): Promise<void
         });
 
 
-        // ── 5. Extract text from PDF ───────────────────────────────────────────
         const rawText = await extractTextFromPDF(buffer);
 
         if (!rawText.trim()) {
@@ -48,20 +44,15 @@ export const uplaodDocuments = async (req: Request, res: Response): Promise<void
             return;
         }
 
-
-        // ── 6. Chunk the text ──────────────────────────────────────────────────
         const chunks = chunkText(rawText, 1000, 100);
+        const chunkTexts = chunks.map(chunk => chunk.text);
+        const embeddings = await embedChunks(chunkTexts);
 
-        // ── 7. Generate embeddings for all chunks ──────────────────────────────
-        const embeddings = await embedChunks(chunks);
-
-        // ── 8. Save chunks + vectors to DB ────────────────────────────────────
-        const chunk_docs = chunks.map((text, index) => ({
-            documentId: documentRecord!._id,
-            userId,
-            text,
+        const chunk_docs = chunks.map((chunk, index) => ({
+            docId: documentRecord!._id,
+            content : chunk.text,
             embedding: embeddings[index],
-            chunkIndex: index,
+            metadata: chunk.metadata
         }));
 
         await ChunkDocs.insertMany(chunk_docs);
@@ -139,8 +130,8 @@ export const deleteDocuments = async (req: Request, res: Response): Promise<void
         // ── 2. Delete everything associated with this document atomically ──────
         await Promise.all([
             DocumentModel.findByIdAndDelete(id),                  // delete document record
-            ChunkDocs.deleteMany({ documentId: id }),                 // delete all chunks + vectors
-            Chat.deleteMany({ documentId: id }),                  // delete all chat history
+            ChunkDocs.deleteMany({ docId: id }),                 // delete all chunks + vectors
+            Chat.deleteMany({ docId: id }),                     // delete all chat history
         ]);
 
 

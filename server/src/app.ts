@@ -2,7 +2,7 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-
+import routes from './routes/index.routes.js';
 
 const app: Application = express();
 
@@ -20,6 +20,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
+
+
+app.use('/api', routes);
 
 // Health Check (Used by AWS/Render to check if server is alive)
 app.get("/health", (_req: Request, res: Response) => {

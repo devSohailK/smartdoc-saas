@@ -27,7 +27,7 @@ const UserSchema = new Schema<IUser>({
     },
     credits: {
         type: Number,
-        default: 3
+        default: 5
     }, // Free tier: 3 docs/day
     plan: {
         type: String,
