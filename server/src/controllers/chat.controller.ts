@@ -4,9 +4,11 @@ import { ChunkDocs } from '../models/Chunk.js';
 import { DocumentModel } from '../models/Document.js';
 import { User } from '../models/User.js';
 import { embedChunks } from '../utils/document.utils.js';
-import OpenAI from 'openai';
+import genAI from '../config/gemini.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+
+
 
 // ── Helper: cosine similarity between two vectors ────────────────────────────
 const cosineSimilarity = (a: number[], b: number[]): number => {
@@ -72,7 +74,7 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
             ? existingChat.messages.map((m) => ({
                 role: m.role as "user" | "assistant",
                 content: m.content,
-              }))
+            }))
             : [];
 
         // 6. Build prompt and call OpenAI
@@ -83,17 +85,21 @@ Do not use outside knowledge.
 Context from document:
 ${context}`;
 
-        const aiResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                ...historyMessages,
-                { role: "user", content: message },
-            ],
-            temperature: 0.3,
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const formattedHistory = historyMessages.map((m) => ({
+            role: m.role === "assistant" ? "model" : "user",
+            parts: [{ text: m.content }],
+        }));
+
+        const chat = model.startChat({
+            history: formattedHistory,
+            generationConfig: { temperature: 0.3 },
         });
 
-        const assistantReply = aiResponse.choices[0].message.content ?? "No response generated.";
+        const result = await chat.sendMessage(
+            `${systemPrompt}\n\nUser question: ${message}`
+        );
+        const assistantReply = result.response.text() ?? "No response generated.";
 
         // 7. Save/update chat history — upsert so one chat doc per user+document
         await Chat.findOneAndUpdate(
@@ -102,7 +108,7 @@ ${context}`;
                 $push: {
                     messages: {
                         $each: [
-                            { role: "user",      content: message,       timestamp: new Date() },
+                            { role: "user", content: message, timestamp: new Date() },
                             { role: "assistant", content: assistantReply, timestamp: new Date() },
                         ],
                     },

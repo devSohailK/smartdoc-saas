@@ -2,10 +2,11 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { User } from "../models/User.js";
+import { env } from '../config/env.js';
 
 
 
-const JWT_SECRET = process.env.JWT_SECRET as string;
+const JWT_SECRET = env.JWT_SECRET as string;
 const JWT_EXPIRES_IN = "3d";
 
 const generateToken = (userId: string): string => {
@@ -19,6 +20,13 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     if (!email || !password || !name) {
       res.status(400).json({ message: "Email, password, and name are required." });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      res.status(400).json({ message: "Invalid email format." });
       return;
     }
 
@@ -48,7 +56,9 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       },
       accessToken: token,
     });
+
   } catch (error) {
+    console.error("Register error:", error);
     res.status(500).json({ message: "Internal server error.", error });
   }
 };
@@ -95,7 +105,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 // GET /api/auth/me
 export const profile = async (req: Request, res: Response): Promise<void> => {
   try {
-    
+
 
     const user = await User.findById(req.userId).select("-password");
     if (!user) {

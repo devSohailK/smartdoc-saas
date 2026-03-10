@@ -2,7 +2,10 @@
 import { Readable } from "stream";
 import cloudinary from "../config/cloudinary.js";
 import genAI from "../config/gemini.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
+
 
 export const uploadToCloudinary = (buffer: Buffer, filename: string): Promise<string> => {
     return new Promise((resolve, reject) => {
