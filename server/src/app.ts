@@ -20,9 +20,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-app.get('/api', (req, res) => {
-    res.json({ message: "API is reachable" });
-});
+
 
 app.use('/api', routes);
 

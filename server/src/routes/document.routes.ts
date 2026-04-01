@@ -9,7 +9,7 @@ router.use(authMiddleware); // used in all routes
 
 router.get('/', getDocuments);
 router.post('/upload', upload.single("file"), uplaodDocuments);
-router.delete('/delete', deleteDocuments);
+router.delete('/:id', deleteDocuments);
 
 
 export default router;
