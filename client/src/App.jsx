@@ -1,23 +1,19 @@
-import { useState } from 'react'
-import {ProtectedRoute} from './routes/ProtectedRoute';
-import {BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom';
-import {useAuthStore} from './stores/authStore';
+
+import AuthPage from "./pages/AuthPage.jsx";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 
-function App() {
-  const {isAuthenticated} = useAuthStore();
 
-
+const App = () => {
+ 
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" />} />
-        <Route path="/dashboard" element={<ProtectedRoute isAuthenticated={isAuthenticated} />} />
-        {/* Add more routes as needed */}
+        <Route path="/auth" element={<AuthPage />} />
       </Routes>
     </Router>
-  )
-}
+  );
+};
 
-export default App
+export default App;

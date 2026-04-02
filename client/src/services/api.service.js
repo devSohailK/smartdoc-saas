@@ -1,6 +1,5 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore';
-import { navigate } from '@reach/router';
 
 
 const api = axios.create({
