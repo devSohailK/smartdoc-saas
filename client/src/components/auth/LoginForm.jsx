@@ -11,8 +11,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
     <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="flex flex-col gap-4">
       {error && (
         <div
-          className="px-4 py-3 rounded-lg text-sm flex items-center gap-2"
-          style={{ backgroundColor: "#2d1515", border: "1px solid #7f1d1d", color: "#fca5a5" }}
+          className="px-4 py-3 rounded-lg text-sm flex items-center gap-2 bg-[#2d1515] border border-[#7f1d1d] text-[#fca5a5]"
         >
           <svg width="15" height="15" fill="none" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" stroke="#fca5a5" strokeWidth="2" />
@@ -27,8 +26,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         <input
           type="email" name="email" value={form.email} onChange={handleChange}
           placeholder="you@example.com" required
-          className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none"
-          style={{ backgroundColor: "#0f2035", border: "1px solid #1e3a5f" }}
+          className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none bg-[#0f2035] border border-[#1e3a5f]"
           onFocus={(e) => (e.target.style.borderColor = "var(--color-primary)")}
           onBlur={(e) => (e.target.style.borderColor = "#1e3a5f")}
         />
@@ -39,8 +37,7 @@ const LoginForm = ({ onSubmit, loading, error }) => {
         <input
           type="password" name="password" value={form.password} onChange={handleChange}
           placeholder="••••••••" required
-          className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none"
-          style={{ backgroundColor: "#0f2035", border: "1px solid #1e3a5f" }}
+          className="w-full px-4 py-2.5 rounded-lg text-sm text-white outline-none bg-[#0f2035] border border-[#1e3a5f]"
           onFocus={(e) => (e.target.style.borderColor = "var(--color-primary)")}
           onBlur={(e) => (e.target.style.borderColor = "#1e3a5f")}
         />
