@@ -6,6 +6,62 @@ import { User } from '../models/User.js';
 import { embedChunks } from '../utils/document.utils.js';
 import genAI from '../config/gemini.js';
 
+const CHAT_MODEL_CANDIDATES = [
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-1.5-flash",
+];
+
+const isModelNotFoundError = (error: unknown): boolean => {
+    const status = (error as { status?: number })?.status;
+    return status === 404;
+};
+
+const isRateLimitError = (error: unknown): boolean => {
+    const status = (error as { status?: number })?.status;
+    return status === 429;
+};
+
+const extractRetryDelay = (error: unknown): string | null => {
+    const details = (error as { errorDetails?: Array<{ ["@type"]?: string; retryDelay?: string }> })?.errorDetails;
+    if (!Array.isArray(details)) return null;
+    const retryInfo = details.find((item) =>
+        item?.["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
+    );
+    return retryInfo?.retryDelay ?? null;
+};
+
+const generateChatReply = async (
+    formattedHistory: { role: "user" | "model"; parts: { text: string }[] }[],
+    prompt: string
+): Promise<string> => {
+    let lastError: unknown = null;
+    let rateLimitError: unknown = null;
+
+    for (const modelName of CHAT_MODEL_CANDIDATES) {
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const chat = model.startChat({
+                history: formattedHistory,
+                generationConfig: { temperature: 0.3 },
+            });
+
+            const result = await chat.sendMessage(prompt);
+            return result.response.text() ?? "No response generated.";
+        } catch (error) {
+            lastError = error;
+            if (isRateLimitError(error) && !rateLimitError) {
+                rateLimitError = error;
+            }
+            if (!isModelNotFoundError(error) && !isRateLimitError(error)) {
+                throw error;
+            }
+        }
+    }
+
+    throw rateLimitError ?? lastError ?? new Error("No compatible chat model found.");
+};
+
 
 
 
@@ -85,21 +141,15 @@ Do not use outside knowledge.
 Context from document:
 ${context}`;
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const formattedHistory = historyMessages.map((m) => ({
+        const formattedHistory: { role: "user" | "model"; parts: { text: string }[] }[] = historyMessages.map((m) => ({
             role: m.role === "assistant" ? "model" : "user",
             parts: [{ text: m.content }],
         }));
 
-        const chat = model.startChat({
-            history: formattedHistory,
-            generationConfig: { temperature: 0.3 },
-        });
-
-        const result = await chat.sendMessage(
+        const assistantReply = await generateChatReply(
+            formattedHistory,
             `${systemPrompt}\n\nUser question: ${message}`
         );
-        const assistantReply = result.response.text() ?? "No response generated.";
 
         // 7. Save/update chat history — upsert so one chat doc per user+document
         await Chat.findOneAndUpdate(
@@ -127,6 +177,22 @@ ${context}`;
 
     } catch (error) {
         console.error("Chat error:", error);
+        if (error instanceof Error && error.message.toLowerCase().includes("fetch failed")) {
+            res.status(503).json({ message: "AI service is temporarily unavailable. Please try again." });
+            return;
+        }
+        if (isModelNotFoundError(error)) {
+            res.status(503).json({ message: "No compatible AI model is available. Please check Gemini configuration." });
+            return;
+        }
+        if (isRateLimitError(error)) {
+            const retryDelay = extractRetryDelay(error);
+            res.status(429).json({
+                message: "AI rate limit reached. Please retry shortly.",
+                ...(retryDelay && { retryAfter: retryDelay }),
+            });
+            return;
+        }
         res.status(500).json({ message: "Internal server error.", error });
     }
 };

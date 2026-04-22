@@ -29,6 +29,7 @@ const AuthPage = () => {
     try {
       const data = await authService.register(name, email, password);
       setAuth(data.user, data.accessToken);
+      {console.log(data.accessToken);}
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong.");
