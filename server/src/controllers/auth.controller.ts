@@ -106,7 +106,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 export const profile = async (req: Request, res: Response): Promise<void> => {
   try {
 
-
     const user = await User.findById(req.userId).select("-password");
     if (!user) {
       res.status(404).json({ message: "User not found." });

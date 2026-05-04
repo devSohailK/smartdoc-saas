@@ -4,7 +4,6 @@ import { User } from '../models/User.js';
 import { ChunkDocs } from '../models/Chunk.js';
 import { Chat } from '../models/Chat.js';
 import { uploadToCloudinary, extractTextFromPDF, chunkText, embedChunks } from '../utils/document.utils.js'
-import { Metadata } from 'pdf-parse';
 
 
 export const uplaodDocuments = async (req: Request, res: Response): Promise<void> => {

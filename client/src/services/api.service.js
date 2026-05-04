@@ -1,8 +1,8 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore';
-import { useNavigate } from 'react-router-dom';
+import {navigateTO} from '../utils/Navigate';
 
-const navigate = useNavigate();
+
 
 
 const api = axios.create({
@@ -33,7 +33,7 @@ api.interceptors.response.use(
         const currentPath = window.location.pathname;
         if (error.response?.status === 401 && currentPath != '/auth') {
             useAuthStore.getState().logout();
-            navigate('/auth');
+            navigateTO('/auth');
         }
         return Promise.reject(error);
     }

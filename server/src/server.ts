@@ -3,30 +3,8 @@ import { connectDB } from "./config/db.js";
 import { env } from "./config/env.js";
 import mongoose from "mongoose";
 
-// ====================================================================
-// UNHANDLED ERROR HANDLERS (Prevent app crashes)
-// ====================================================================
 
-// Handle unhandled promise rejections
-process.on("unhandledRejection", (err: Error) => {
-  console.error("UNHANDLED REJECTION! Shutting down...");
-  console.error(err.name, err.message);
-  process.exit(1);
-});
 
-// Handle uncaught exceptions
-process.on("uncaughtException", (err: Error) => {
-  console.error("UNCAUGHT EXCEPTION! Shutting down...");
-  console.error(err.name, err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
-
-// Note: SIGTERM and SIGINT are handled in startServer() for graceful shutdown
-
-// ====================================================================
-// START SERVER
-// ====================================================================
 
 // Start Server Only After DB Connects
 const startServer = async () => {
@@ -57,24 +35,6 @@ const startServer = async () => {
         process.exit(1);
       });
     });
-
-    // Handle graceful shutdown
-    const gracefulShutdown = () => {
-      console.log("\nShutting down gracefully...");
-      server.close(() => {
-        console.log("HTTP server closed");
-        mongoose.connection.close().then(() => {
-          console.log("MongoDB connection closed");
-          process.exit(0);
-        }).catch((err) => {
-          console.error("Error closing MongoDB connection:", err);
-          process.exit(1);
-        });
-      });
-    };
-
-    process.on("SIGTERM", gracefulShutdown);
-    process.on("SIGINT", gracefulShutdown);
     
   } catch (error) {
     console.error("\nFailed to start server:");

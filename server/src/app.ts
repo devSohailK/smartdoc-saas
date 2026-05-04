@@ -47,7 +47,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
-  console.error(`❌ Error: ${message}`);
+  console.error(`Error: ${message}`);
   if (process.env.NODE_ENV !== "production") {
     console.error(`Stack: ${err.stack}`);
   }

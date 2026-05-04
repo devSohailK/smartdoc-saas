@@ -28,7 +28,7 @@ const UserSchema = new Schema<IUser>({
     credits: {
         type: Number,
         default: 5
-    }, // Free tier: 3 docs/day
+    }, // Free tier: 5 docs/day
     plan: {
         type: String,
         enum: ["free", "pro"],
